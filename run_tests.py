@@ -7,7 +7,7 @@ tests = sorted((root / "tests").glob("test_*.py"))
 tests.append(root / "evals" / "run_evals.py")
 failed = []
 for t in tests:
-    print(f"=== {t.name} ===")
+    print(f"=== {t.name} ===", flush=True)
     r = subprocess.run([sys.executable, str(t)])
     if r.returncode != 0:
         failed.append(t.name)

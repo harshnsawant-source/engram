@@ -13,11 +13,10 @@ from engram.store import MemoryStore
 from engram.providers import FakeLLM, HashEmbedder
 from engram.engine import SimClock
 from engram.respond import respond
-from engram.recall import recall, cosine
+from engram.recall import recall
 from engram.consolidate import sleep
-from engram.decay import current_strength, is_dormant, boost
+from engram.decay import is_dormant, boost
 from engram.store import Episode, SemanticFact
-from engram import config
 
 emb = HashEmbedder()
 FAILED = []

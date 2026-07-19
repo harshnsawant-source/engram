@@ -7,6 +7,7 @@ from typing import List
 
 from . import config
 from .recall import cosine
+from .respond import strip_citations
 
 
 @dataclass
@@ -49,7 +50,8 @@ def distill_prompt(cluster):
         "related episodes from the user's recent days. Distill them into "
         "concise factual statements about the user or their world. Rules: "
         "only facts directly supported by the episodes; each fact on its own "
-        'line starting with "- "; if nothing is worth keeping, reply NONE.'
+        'line starting with "- "; Do not repeat the [id] labels in your facts; '
+        "if nothing is worth keeping, reply NONE."
         f"\n\nEpisodes:\n{lines}\n\nFacts:"
     )
 
@@ -92,6 +94,9 @@ def sleep(store, llm, embedder, clock):
     for cluster in cluster_episodes(pending, config.CLUSTER_THRESHOLD):
         cluster_ids = [e.id for e in cluster]
         for stmt in parse_facts(llm.complete(distill_prompt(cluster))):
+            stmt = strip_citations(stmt).strip()
+            if not stmt:
+                continue
             emb = embedder.embed(stmt)
             match = _best_live_match(store.facts, emb)
             if match is None:

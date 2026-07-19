@@ -42,5 +42,27 @@ check("ollama: embedder defaults", oemb.model == "nomic-embed-text"
       and oemb.host == "http://localhost:11434" and oemb.timeout == 60)
 check("ollama: provider surface", callable(ollm.complete) and callable(oemb.embed))
 
+# Hardening: trailing-slash hosts normalize; 200-with-error JSON surfaces loudly.
+import engram.providers_ollama as po
+
+check("ollama: trailing slash stripped", po.OllamaLLM(host="http://x:1/").host == "http://x:1"
+      and po.OllamaEmbedder(host="http://x:1///").host == "http://x:1")
+
+_real_post = po._post
+po._post = lambda url, payload, timeout: {"error": "model not found"}
+try:
+    po.OllamaLLM().complete("hi")
+    llm_raised = False
+except RuntimeError:
+    llm_raised = True
+try:
+    po.OllamaEmbedder().embed("hi")
+    emb_raised = False
+except RuntimeError:
+    emb_raised = True
+po._post = _real_post
+check("ollama: error JSON raises for llm", llm_raised)
+check("ollama: error JSON raises for embedder", emb_raised)
+
 print(f"\n{'RED' if FAILS else 'GREEN'}: {len(FAILS)} failing")
 sys.exit(1 if FAILS else 0)

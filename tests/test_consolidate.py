@@ -117,5 +117,18 @@ r6 = sleep(st2, llm2, emb2, clock2)         # night 4: p1 strength 2^-3.5 ~ 0.08
 check("sleep: consolidated episode reported dormant", p1.id in r6.went_dormant)
 check("sleep: fact still live", not is_dormant(st2.facts[0], clock2.now()))
 
+# Hardening: a model that echoes [id] labels into its facts gets them stripped,
+# and the distill prompt tells it not to echo them in the first place.
+st3 = _MS()
+clock3 = SimClock()
+e9 = st3.add_episode("the kettle whistles at seven each morning", "user",
+                     emb2.embed("the kettle whistles at seven each morning"), now=0.5)
+llm3 = FakeLLM([f"- The user's kettle whistles each morning [{e9.id}]"])
+r9 = sleep(st3, llm3, emb2, clock3)
+check("sleep: echoed [id] markers stripped from fact statements",
+      st3.facts and "[" not in st3.facts[0].statement)
+check("distill prompt: forbids echoing id labels",
+      "Do not repeat" in llm3.prompts[0])
+
 print(f"\n{'RED' if FAILS else 'GREEN'}: {len(FAILS)} failing")
 sys.exit(1 if FAILS else 0)
