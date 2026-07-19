@@ -36,6 +36,16 @@ for i in range(config.MAX_EPISODES + 5):
 check("store: cap enforced", len(cap.episodes) == config.MAX_EPISODES)
 check("store: cap dropped oldest", cap.episodes[0].text != "event 0")
 
+# Dormant-first eviction: at now=20 the 200 old episodes (t=0) are dormant
+# (episode half-life 3 -> strength ~0.01), so the cap must evict a dormant
+# one, not the freshly added live episode.
+dorm = MemoryStore()
+for i in range(config.MAX_EPISODES):
+    dorm.add_episode(f"old event {i}", "user", [1.0, 0.0], now=0.0)
+fresh = dorm.add_episode("fresh event", "user", [1.0, 0.0], now=20.0)
+check("store: cap evicts a dormant episode first", len(dorm.episodes) == config.MAX_EPISODES
+      and fresh in dorm.episodes and dorm.episodes[0].text != "old event 0")
+
 check("config: spec defaults", config.HALF_LIFE_EPISODE == 3.0
       and config.HALF_LIFE_EPISODE_CONSOLIDATED == 1.0 and config.HALF_LIFE_FACT == 14.0
       and config.RETRIEVAL_BOOST == 0.3 and config.STRENGTH_CAP == 1.0

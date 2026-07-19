@@ -32,6 +32,10 @@ def _refusal():
     return Reply(REFUSAL_TEXT, [], True)
 
 
+def strip_citations(text):
+    return re.sub(r"\s*\[[0-9a-f]{8}\]", "", text)
+
+
 def _memory_text(mem):
     return mem.text if hasattr(mem, "text") else mem.statement
 

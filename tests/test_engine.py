@@ -33,7 +33,9 @@ check("engine: grounded reply", not r.refused and r.citations == [ep.id])
 check("engine: clock advanced by the turn", eng.clock.now() > 0.0)
 texts = [e.text for e in eng.store.episodes]
 check("engine: message and reply observed",
-      "what is the dog called" in texts and any("Bruno [" in t for t in texts))
+      "what is the dog called" in texts and any("Bruno" in t for t in texts))
+check("engine: observed agent reply has citation markers stripped",
+      any(t == "The dog is called Bruno." for t in texts))
 mem_block = eng.llm.prompts[-1].split("Memories:\n", 1)[1].split("\n\nUser:", 1)[0]
 check("engine: recall ran before the question was stored (self-match guard)",
       "what is the dog called" not in mem_block)
@@ -60,7 +62,7 @@ ids = {n["id"] for n in g["nodes"]}
 check("graph: all memories present", ids == {e1.id, f1.id, f2.id, f_old.id})
 kinds = {(d["source"], d["target"], d["kind"]) for d in g["edges"]}
 check("graph: provenance edge", (f1.id, e1.id, "provenance") in kinds)
-check("graph: supersedes edge", (f_old.id, f1.id, "supersedes") in kinds)
+check("graph: supersedes edge points new -> old", (f1.id, f_old.id, "supersedes") in kinds)
 check("graph: similarity edge between near-twin facts",
       any(k == "similar" and {a, b} == {f1.id, f2.id} for a, b, k in kinds))
 node = next(n for n in g["nodes"] if n["id"] == f1.id)

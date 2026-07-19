@@ -6,7 +6,7 @@ import math
 from . import config
 from .decay import current_strength, is_dormant
 from .recall import cosine
-from .respond import respond as _respond
+from .respond import respond as _respond, strip_citations
 
 
 class SimClock:
@@ -42,7 +42,7 @@ class MemoryEngine:
                          message, self.clock.now())
         self.observe(message, "user")
         if not reply.refused:
-            self.observe(reply.text, "agent")
+            self.observe(strip_citations(reply.text), "agent")
         return reply
 
     def graph(self):
@@ -56,7 +56,7 @@ class MemoryEngine:
             for ep_id in f.provenance:
                 edges.append({"source": f.id, "target": ep_id, "kind": "provenance"})
             if f.superseded_by:
-                edges.append({"source": f.id, "target": f.superseded_by,
+                edges.append({"source": f.superseded_by, "target": f.id,
                               "kind": "supersedes"})
         for i, a in enumerate(live_facts):
             for b in live_facts[i + 1:]:
