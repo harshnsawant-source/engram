@@ -2,7 +2,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-tests = sorted((Path(__file__).resolve().parent / "tests").glob("test_*.py"))
+root = Path(__file__).resolve().parent
+tests = sorted((root / "tests").glob("test_*.py"))
+tests.append(root / "evals" / "run_evals.py")
 failed = []
 for t in tests:
     print(f"=== {t.name} ===")
