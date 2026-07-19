@@ -30,5 +30,17 @@ dog_m = emb.embed("the dog is called Bruno")
 car_m = emb.embed("my car needs new tyres soon")
 check("hashembed: related text scores higher", cos(dog_q, dog_m) > cos(dog_q, car_m))
 
+# Ollama providers: constructible offline with the documented defaults.
+# (No network calls in tests — the live path is scripts/live_demo.py.)
+from engram.providers_ollama import OllamaLLM, OllamaEmbedder
+
+ollm = OllamaLLM()
+oemb = OllamaEmbedder()
+check("ollama: llm defaults", ollm.model == "nemotron-3-nano:4b"
+      and ollm.host == "http://localhost:11434" and ollm.timeout == 180)
+check("ollama: embedder defaults", oemb.model == "nomic-embed-text"
+      and oemb.host == "http://localhost:11434" and oemb.timeout == 60)
+check("ollama: provider surface", callable(ollm.complete) and callable(oemb.embed))
+
 print(f"\n{'RED' if FAILS else 'GREEN'}: {len(FAILS)} failing")
 sys.exit(1 if FAILS else 0)
