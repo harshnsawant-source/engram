@@ -18,7 +18,7 @@ All numbers come from the deterministic offline eval harness
 
 | Eval | Result |
 |---|---|
-| Grounding: unanswerable questions refused (LLM actively trying to confabulate a cited answer) | **20/20 refused, 0 confabulations** |
+| Grounding: unanswerable questions against a confabulating LLM (the engine refuses at retrieval or the verifier blocks the fabricated citation) | **20/20 refused, 0 confabulations** |
 | Retrieval: seeded questions ranking the correct memory first | **10/10** |
 | Provenance: consolidated facts fully traceable to real episodes | **3/3** |
 | Forgetting curve: untouched episode dormant by sim-day 9, untouched fact by day 39, weekly-rehearsed fact alive at day 42 | **asserted from the decay math** |
