@@ -71,5 +71,15 @@ check("graph: node shape", node["type"] == "fact" and len(node["label"]) <= 60
 
 check("exports: Reply importable from package root", Reply is not None)
 
+# sleep() facade delegates to consolidate and returns a DreamReport.
+from engram import DreamReport
+seng = MemoryEngine(MemoryStore(), FakeLLM(["- The user enjoys morning walks"]), emb, SimClock())
+seng.observe("went for a long morning walk in the park")
+rep = seng.sleep()
+check("engine: sleep returns DreamReport", isinstance(rep, DreamReport))
+check("engine: sleep created a fact", len(seng.store.facts) == 1
+      and rep.learned and rep.learned[0]["id"] == seng.store.facts[0].id)
+check("engine: sleep advanced to next day", seng.clock.now() == 1.0)
+
 print(f"\n{'RED' if FAILS else 'GREEN'}: {len(FAILS)} failing")
 sys.exit(1 if FAILS else 0)

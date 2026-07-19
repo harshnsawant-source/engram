@@ -45,6 +45,10 @@ class MemoryEngine:
             self.observe(strip_citations(reply.text), "agent")
         return reply
 
+    def sleep(self):
+        from .consolidate import sleep as _sleep
+        return _sleep(self.store, self.llm, self.embedder, self.clock)
+
     def graph(self):
         now = self.clock.now()
         nodes, edges = [], []

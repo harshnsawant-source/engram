@@ -3,6 +3,7 @@
 from .engine import MemoryEngine, SimClock
 from .respond import Reply
 from .store import Episode, MemoryStore, SemanticFact
+from .consolidate import DreamReport
 
 __all__ = ["MemoryEngine", "SimClock", "MemoryStore",
-           "Episode", "SemanticFact", "Reply"]
+           "Episode", "SemanticFact", "Reply", "DreamReport"]
