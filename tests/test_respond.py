@@ -48,12 +48,11 @@ r = respond(s, llm, emb, "what is the dog called", now=0.0)
 check("respond: bad citation retries then succeeds", not r.refused and r.citations == ["aaaa1111"])
 check("respond: retry actually called twice", len(llm.prompts) == 2)
 
-# Citation whose sentence shares no content words with the memory -> fails; both tries bad -> refuse.
+# Citation whose sentence shares no content words with the memory -> fails; no surviving memories -> refuse.
 s, ep = seeded()
-llm = FakeLLM(["Purple elephants juggle nicely [aaaa1111].",
-               "Purple elephants juggle nicely [aaaa1111]."])
+llm = FakeLLM(["Purple elephants juggle nicely [aaaa1111]."])
 r = respond(s, llm, emb, "what is the dog called", now=0.0)
-check("respond: unsupported claim refused after retry", r.refused and r.text == REFUSAL_TEXT)
+check("respond: unsupported claim with no surviving memories refuses", r.refused and r.text == REFUSAL_TEXT)
 check("respond: failed verification boosts nothing", ep.access_count == 0)
 
 # A reply with no citations at all is not grounded -> retry -> refuse.
@@ -61,6 +60,31 @@ s, ep = seeded()
 llm = FakeLLM(["The dog is called Bruno.", "The dog is called Bruno."])
 r = respond(s, llm, emb, "what is the dog called", now=0.0)
 check("respond: citation-free reply refused", r.refused)
+
+# Narrowed-context retry: first citation fails, OTHER memories survive,
+# a genuine second LLM call answers from the smaller context.
+s = MemoryStore()
+a = s.add_episode("the dog is called Bruno", "user", emb.embed("the dog is called Bruno"), now=0.0)
+a.id = "aaaa1111"
+b = s.add_episode("the dog likes long walks", "user", emb.embed("the dog likes long walks"), now=0.0)
+b.id = "bbbb2222"
+llm = FakeLLM(["Purple elephants juggle nicely [aaaa1111].",
+               "The dog likes long walks [bbbb2222]."])
+r = respond(s, llm, emb, "what is the dog called", now=0.0)
+check("respond: narrowed retry succeeds citing a survivor",
+      not r.refused and r.citations == ["bbbb2222"])
+check("respond: narrowed retry made a second LLM call", len(llm.prompts) == 2)
+check("respond: failed memory removed from retry context",
+      "aaaa1111" not in llm.prompts[1])
+check("respond: survivor boosted, failed memory not",
+      b.access_count == 1 and a.access_count == 0)
+
+# Empty-text episode in the retrieved set must not crash prompt building.
+s, ep = seeded()
+s.add_episode("", "user", emb.embed(""), now=0.0)
+llm = FakeLLM(["The dog is called Bruno [aaaa1111]."])
+r = respond(s, llm, emb, "what is the dog called", now=0.0)
+check("respond: empty-text episode does not crash prompting", not r.refused)
 
 print(f"\n{'RED' if FAILS else 'GREEN'}: {len(FAILS)} failing")
 sys.exit(1 if FAILS else 0)

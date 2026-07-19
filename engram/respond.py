@@ -33,7 +33,7 @@ def _refusal():
 
 
 def _memory_text(mem):
-    return getattr(mem, "text", None) or mem.statement
+    return mem.text if hasattr(mem, "text") else mem.statement
 
 
 def _content_words(text):
