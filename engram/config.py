@@ -10,3 +10,5 @@ REFUSAL_THRESHOLD = 0.25               # best retrieval score below this -> refu
 TOP_K = 6
 SIM_EDGE_THRESHOLD = 0.75              # fact<->fact similarity edges in graph()
 MAX_EPISODES = 200                     # demo cap; oldest-dormant dropped beyond it
+CLUSTER_THRESHOLD = 0.6                # episode cosine for sleep clustering
+MERGE_THRESHOLD = 0.8                  # new-fact vs live-fact match for merge/supersede
