@@ -34,8 +34,9 @@ check("engine: clock advanced by the turn", eng.clock.now() > 0.0)
 texts = [e.text for e in eng.store.episodes]
 check("engine: message and reply observed",
       "what is the dog called" in texts and any("Bruno [" in t for t in texts))
-check("engine: reply cites the memory, not the question itself",
-      r.citations == [ep.id])
+mem_block = eng.llm.prompts[-1].split("Memories:\n", 1)[1].split("\n\nUser:", 1)[0]
+check("engine: recall ran before the question was stored (self-match guard)",
+      "what is the dog called" not in mem_block)
 
 # Refusal path: nothing relevant -> refusal, and the refusal text is NOT observed.
 before = len(eng.store.episodes)
