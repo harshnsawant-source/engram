@@ -61,7 +61,7 @@ class GeminiLLM:
 
 
 class GeminiEmbedder:
-    def __init__(self, api_key, model="gemini-embedding-2", dims=256, timeout=30):
+    def __init__(self, api_key, model="gemini-embedding-001", dims=256, timeout=30):
         self.api_key = api_key
         self.model = model
         self.dims = dims

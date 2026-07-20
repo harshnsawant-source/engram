@@ -59,7 +59,7 @@ report = engine.sleep()                              # consolidation + DreamRepo
 Runs against any LLM/embedder pair implementing
 `complete(prompt, max_tokens)` / `embed(text)` — local Ollama models by
 default; deterministic fakes power the entire test battery
-(`python run_tests.py`, 8/8 suites, fully offline).
+(`python run_tests.py`, 9/9 suites, fully offline).
 
 ## Roadmap
 

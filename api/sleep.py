@@ -10,7 +10,10 @@ from engram.webapi import run_handler
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
-        length = int(self.headers.get("Content-Length", 0))
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+        except (TypeError, ValueError):
+            length = 0
         body = self.rfile.read(length)
         status, data = run_handler("sleep", body, os.environ)
         payload = json.dumps(data).encode("utf-8")

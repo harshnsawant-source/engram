@@ -115,6 +115,12 @@ def _chat_with_store(store_obj):
 
 status, _ = _chat_with_store({"episodes": [_min_episode(embedding=["a", "b", "c"])], "facts": []})
 check("adversarial: non-numeric embedding 400", status == 400)
+# NaN/Inf survive json.loads and are truthy -> they must be rejected, not silently
+# ranked (which also emits an invalid-JSON NaN token the browser can't parse).
+status, _ = _chat_with_store({"episodes": [_min_episode(embedding=[float("nan"), 1.0])], "facts": []})
+check("adversarial: NaN embedding element 400", status == 400)
+status, _ = _chat_with_store({"episodes": [_min_episode(strength=float("inf"))], "facts": []})
+check("adversarial: infinite strength 400", status == 400)
 status, _ = _chat_with_store({"episodes": [_min_episode(text=12345)], "facts": []})
 check("adversarial: non-string text 400", status == 400)
 status, _ = _chat_with_store({"episodes": [_min_episode(strength="high")], "facts": []})

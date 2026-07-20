@@ -4,6 +4,7 @@ returns the new state. Pure logic — fully offline-testable; the files in api/
 are thin HTTP wrappers around run_handler()."""
 
 import json
+import math
 from dataclasses import asdict
 
 from .engine import MemoryEngine, SimClock
@@ -45,7 +46,8 @@ def seed_store(embedder, now=0.0):
 
 
 def _is_num(x):
-    return isinstance(x, (int, float)) and not isinstance(x, bool)
+    return (isinstance(x, (int, float)) and not isinstance(x, bool)
+            and math.isfinite(x))
 
 
 def _valid_embedding(emb):

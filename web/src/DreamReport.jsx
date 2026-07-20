@@ -1,14 +1,21 @@
 import React from "react";
 
-const SECTIONS = [
-  ["learned", "Learned", (x) => x.statement],
-  ["strengthened", "Strengthened", (x) => x.statement],
-  ["superseded", "Superseded", (x) => x.statement],
-  ["went_dormant", "Faded into dormancy", (x) => x],
-];
-
-export default function DreamReport({ report }) {
+export default function DreamReport({ report, store }) {
   if (!report) return <div className="placeholder">no dreams yet — press Sleep</div>;
+
+  // went_dormant is a list of bare memory ids; resolve each to its readable text
+  // (episode text / fact statement) from the store, falling back to the id.
+  const textById = {};
+  for (const e of store?.episodes ?? []) textById[e.id] = e.text;
+  for (const f of store?.facts ?? []) textById[f.id] = f.statement;
+
+  const SECTIONS = [
+    ["learned", "Learned", (x) => x.statement],
+    ["strengthened", "Strengthened", (x) => x.statement],
+    ["superseded", "Superseded", (x) => x.statement],
+    ["went_dormant", "Faded into dormancy", (x) => textById[x] ?? x],
+  ];
+
   const quiet = SECTIONS.every(([key]) => (report[key] || []).length === 0);
   return (
     <div className="dream">

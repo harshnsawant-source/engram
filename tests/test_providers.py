@@ -71,7 +71,7 @@ from engram.webapi import ProviderBusy
 glm = pg.GeminiLLM("k")
 gem = pg.GeminiEmbedder("k")
 check("gemini: llm defaults", glm.model == "gemini-2.5-flash-lite" and glm.timeout == 60)
-check("gemini: embedder defaults", gem.model == "gemini-embedding-2" and gem.dims == 256)
+check("gemini: embedder defaults", gem.model == "gemini-embedding-001" and gem.dims == 256)
 
 check("gemini: parse candidates text", pg._parse_text(
     {"candidates": [{"content": {"parts": [{"text": "a"}, {"text": "b"}]}}]}) == "ab")

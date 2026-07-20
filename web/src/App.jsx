@@ -148,7 +148,7 @@ export default function App() {
               ))}
             </ul>
           )}
-          {tab === "dream" && <DreamReport report={dream} />}
+          {tab === "dream" && <DreamReport report={dream} store={store} />}
         </section>
       </main>
       <footer>
