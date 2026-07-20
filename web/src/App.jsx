@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { post } from "./api.js";
+import MemoryGraph from "./MemoryGraph.jsx";
+import DreamReport from "./DreamReport.jsx";
 
 const MAX_TURNS = 30;
 const MAX_SLEEPS = 10;
@@ -122,7 +124,7 @@ export default function App() {
                 onClick={() => setTab(name)}>{name}</button>
             ))}
           </nav>
-          {tab === "graph" && <div className="placeholder">memory graph (Task 6)</div>}
+          {tab === "graph" && <MemoryGraph graph={graph} />}
           {tab === "episodes" && (
             <ul className="mems">
               {[...episodes].reverse().map((e) => (
@@ -146,7 +148,7 @@ export default function App() {
               ))}
             </ul>
           )}
-          {tab === "dream" && <div className="placeholder">dream report (Task 6)</div>}
+          {tab === "dream" && <DreamReport report={dream} />}
         </section>
       </main>
       <footer>

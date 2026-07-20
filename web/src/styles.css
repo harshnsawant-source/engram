@@ -51,3 +51,24 @@ button.sleep { border-color: var(--fact); }
   border-radius: 999px; padding: 0 8px; }
 footer { padding: 12px 0 4px; text-align: center; }
 footer a { color: var(--muted); font-size: 13px; }
+.graphwrap { flex: 1; display: flex; flex-direction: column; padding: 10px; min-height: 0; }
+.graph { flex: 1; width: 100%; min-height: 320px; }
+.graph circle { cursor: pointer; transition: r 300ms, fill-opacity 300ms; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted);
+  font-size: 12px; padding: 8px 4px 0; }
+.legend .sw { display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+  margin-right: 4px; }
+.legend .ln { display: inline-block; width: 18px; border-top: 2px solid #6b7280;
+  margin-right: 4px; vertical-align: middle; }
+.legend .ln.dashed { border-top-style: dashed; border-top-color: var(--warn); }
+.legend .ln.dotted { border-top-style: dotted; border-top-color: var(--fact); }
+.nodecard { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px;
+  margin: 8px 4px 4px; font-size: 13px; color: var(--muted); }
+.nodecard .nodelabel { color: var(--ink); margin-top: 2px; }
+.dream { padding: 14px; overflow-y: auto; }
+.dreamhead { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+.dreamsec h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--muted); margin: 12px 0 6px; }
+.dreamsec ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.fadein { opacity: 0; animation: fadein 500ms forwards; }
+@keyframes fadein { to { opacity: 1; } }
