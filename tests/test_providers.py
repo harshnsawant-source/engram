@@ -64,5 +64,44 @@ po._post = _real_post
 check("ollama: error JSON raises for llm", llm_raised)
 check("ollama: error JSON raises for embedder", emb_raised)
 
+# Gemini providers: offline construction, defensive parsers, 429 -> ProviderBusy.
+import engram.providers_gemini as pg
+from engram.webapi import ProviderBusy
+
+glm = pg.GeminiLLM("k")
+gem = pg.GeminiEmbedder("k")
+check("gemini: llm defaults", glm.model == "gemini-2.5-flash-lite" and glm.timeout == 60)
+check("gemini: embedder defaults", gem.model == "gemini-embedding-2" and gem.dims == 256)
+
+check("gemini: parse candidates text", pg._parse_text(
+    {"candidates": [{"content": {"parts": [{"text": "a"}, {"text": "b"}]}}]}) == "ab")
+check("gemini: parse empty candidates", pg._parse_text({"candidates": []}) == ""
+      and pg._parse_text({}) == "")
+check("gemini: parse embedding.values",
+      pg._parse_embedding({"embedding": {"values": [1.0, 2.0]}}) == [1.0, 2.0])
+check("gemini: parse embeddings[0].values",
+      pg._parse_embedding({"embeddings": [{"values": [3.0]}]}) == [3.0])
+check("gemini: parse embeddings[0].value",
+      pg._parse_embedding({"embeddings": [{"value": [4.0]}]}) == [4.0])
+check("gemini: parse unknown shape is empty", pg._parse_embedding({}) == [])
+
+import urllib.error
+_real_gpost = pg._post
+def _busy(url, payload, headers, timeout):
+    raise urllib.error.HTTPError(url, 429, "quota", {}, None)
+pg._post = _busy
+try:
+    glm.complete("hi")
+    busy_llm = False
+except ProviderBusy:
+    busy_llm = True
+try:
+    gem.embed("hi")
+    busy_emb = False
+except ProviderBusy:
+    busy_emb = True
+pg._post = _real_gpost
+check("gemini: 429 raises ProviderBusy (llm + embedder)", busy_llm and busy_emb)
+
 print(f"\n{'RED' if FAILS else 'GREEN'}: {len(FAILS)} failing")
 sys.exit(1 if FAILS else 0)
