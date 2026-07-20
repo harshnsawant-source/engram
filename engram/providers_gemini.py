@@ -47,15 +47,19 @@ def _parse_embedding(data):
 
 
 class GeminiLLM:
-    def __init__(self, api_key, model="gemini-2.5-flash-lite", timeout=60):
+    def __init__(self, api_key, model="gemini-flash-lite-latest", timeout=60):
         self.api_key = api_key
         self.model = model
         self.timeout = timeout
 
     def complete(self, prompt, max_tokens=1000):
+        # thinkingBudget 0 disables chain-of-thought: grounded recall and
+        # distillation don't need it, and it stops "thinking" tokens from
+        # eating the output budget (empty replies on the flash-lite models).
         data = _call(f"{_BASE}/{self.model}:generateContent",
                      {"contents": [{"parts": [{"text": prompt}]}],
-                      "generationConfig": {"maxOutputTokens": max_tokens}},
+                      "generationConfig": {"maxOutputTokens": max_tokens,
+                                           "thinkingConfig": {"thinkingBudget": 0}}},
                      self.api_key, self.timeout)
         return _parse_text(data)
 
