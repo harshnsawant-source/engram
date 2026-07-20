@@ -1,5 +1,26 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd web && npm install && npm run build",
-  "outputDirectory": "web/dist"
+  "version": 2,
+  "builds": [
+    {
+      "src": "web/package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "dist" }
+    },
+    {
+      "src": "api/chat.py",
+      "use": "@vercel/python",
+      "config": { "includeFiles": "engram/**" }
+    },
+    {
+      "src": "api/sleep.py",
+      "use": "@vercel/python",
+      "config": { "includeFiles": "engram/**" }
+    }
+  ],
+  "routes": [
+    { "src": "/api/chat", "dest": "/api/chat.py" },
+    { "src": "/api/sleep", "dest": "/api/sleep.py" },
+    { "src": "/assets/(.*)", "dest": "/web/assets/$1" },
+    { "src": "/(.*)", "dest": "/web/index.html" }
+  ]
 }

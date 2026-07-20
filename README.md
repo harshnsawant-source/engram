@@ -4,6 +4,9 @@ A cognitive memory engine for LLM agents: episodic-to-semantic
 consolidation, a real forgetting curve, and provenance-grounded recall
 that refuses to confabulate.
 
+**Live demo: https://engram-blue.vercel.app** — chat with it, then press
+Sleep and watch your conversation consolidate into memory.
+
 Most "agent memory" is a vector store that only ever grows. Engram is a
 memory *system*: raw episodes consolidate into semantic facts during a
 sleep cycle, unused memories fade (and rehearsed ones strengthen), every
@@ -63,7 +66,8 @@ default; deterministic fakes power the entire test battery
 
 ## Roadmap
 
-- Live web demo: chat with the engine and watch your own conversation
-  consolidate on a visible memory graph (sleep button included).
+- ~~Live web demo~~ — shipped: [the demo above](https://engram-blue.vercel.app)
+  runs this engine behind two stateless serverless functions; your memory
+  store lives in your browser, so every visitor is isolated by construction.
 
 Built by [Harsh Sawant](mailto:harshnsawant@gmail.com).
