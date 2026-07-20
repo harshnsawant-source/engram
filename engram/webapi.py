@@ -11,6 +11,9 @@ from .providers import FakeLLM, HashEmbedder
 from .store import MemoryStore
 
 MAX_MESSAGE_CHARS = 500
+MAX_BODY_BYTES = 1_000_000
+MAX_STORE_FACTS = 400
+MAX_EMBEDDING_DIMS = 4096
 BUSY_MESSAGE = "demo is busy, try again in a minute"
 
 SEED_EPISODES = [
@@ -41,16 +44,48 @@ def seed_store(embedder, now=0.0):
     return store
 
 
+def _is_num(x):
+    return isinstance(x, (int, float)) and not isinstance(x, bool)
+
+
+def _valid_embedding(emb):
+    return (isinstance(emb, list) and len(emb) <= MAX_EMBEDDING_DIMS
+            and all(_is_num(x) for x in emb))
+
+
 def _validate_store(obj):
     if not isinstance(obj, dict):
         raise WebApiError(400, "store must be an object")
+    episodes = obj.get("episodes", [])
+    facts = obj.get("facts", [])
+    if not isinstance(episodes, list) or not isinstance(facts, list):
+        raise WebApiError(400, "malformed store")
+    from . import config
+    if len(episodes) > config.MAX_EPISODES or len(facts) > MAX_STORE_FACTS:
+        raise WebApiError(400, "store too large")
     try:
         store = MemoryStore.from_json(json.dumps(obj))
-    except (KeyError, TypeError, ValueError) as exc:
-        raise WebApiError(400, f"malformed store: {exc}")
-    for mem in store.episodes + store.facts:
-        if not isinstance(mem.embedding, list):
-            raise WebApiError(400, "malformed store: embedding must be a list")
+    except (KeyError, TypeError, ValueError):
+        raise WebApiError(400, "malformed store")
+    for e in store.episodes:
+        if not (isinstance(e.id, str) and isinstance(e.actor, str)
+                and isinstance(e.text, str) and isinstance(e.consolidated, bool)
+                and _is_num(e.t) and _is_num(e.strength) and _is_num(e.last_access)
+                and isinstance(e.access_count, int)
+                and not isinstance(e.access_count, bool)
+                and _valid_embedding(e.embedding)):
+            raise WebApiError(400, "malformed store")
+    for f in store.facts:
+        if not (isinstance(f.id, str) and isinstance(f.statement, str)
+                and _is_num(f.confidence) and _is_num(f.strength)
+                and _is_num(f.last_access) and _is_num(f.born_t)
+                and isinstance(f.access_count, int)
+                and not isinstance(f.access_count, bool)
+                and isinstance(f.provenance, list)
+                and all(isinstance(p, str) for p in f.provenance)
+                and (f.superseded_by is None or isinstance(f.superseded_by, str))
+                and _valid_embedding(f.embedding)):
+            raise WebApiError(400, "malformed store")
     return store
 
 
@@ -105,9 +140,11 @@ _HANDLERS = {"chat": handle_chat, "sleep": handle_sleep}
 
 
 def run_handler(name, body_bytes, environ):
+    if len(body_bytes) > MAX_BODY_BYTES:
+        return 400, {"error": "body too large"}
     try:
         payload = json.loads(body_bytes.decode("utf-8"))
-    except (UnicodeDecodeError, ValueError):
+    except (UnicodeDecodeError, ValueError, RecursionError):
         return 400, {"error": "body must be valid JSON"}
     if not isinstance(payload, dict):
         return 400, {"error": "body must be a JSON object"}
@@ -121,3 +158,5 @@ def run_handler(name, body_bytes, environ):
         return exc.status, {"error": exc.message}
     except ProviderBusy:
         return 503, {"error": BUSY_MESSAGE}
+    except Exception:
+        return 500, {"error": "internal error"}

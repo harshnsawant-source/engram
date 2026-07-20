@@ -102,5 +102,42 @@ check("run_handler: ProviderBusy -> 503 busy message", status == 503 and data["e
 llm, e2 = providers_from_env({"ENGRAM_FAKE": "1"})
 check("providers_from_env: fake mode", isinstance(llm, FakeLLM) and isinstance(e2, HashEmbedder))
 
+# Adversarial inputs must fail clean (400/500), never crash out of run_handler.
+def _min_episode(**kw):
+    base = dict(id="e0000001", t=0.0, actor="user", text="x", embedding=[1.0],
+                strength=1.0, last_access=0.0, access_count=0, consolidated=False)
+    base.update(kw)
+    return base
+
+def _chat_with_store(store_obj):
+    body = json.dumps({"store": store_obj, "t": 0, "message": "hi there friend"}).encode()
+    return run_handler("chat", body, {"ENGRAM_FAKE": "1"})
+
+status, _ = _chat_with_store({"episodes": [_min_episode(embedding=["a", "b", "c"])], "facts": []})
+check("adversarial: non-numeric embedding 400", status == 400)
+status, _ = _chat_with_store({"episodes": [_min_episode(text=12345)], "facts": []})
+check("adversarial: non-string text 400", status == 400)
+status, _ = _chat_with_store({"episodes": [_min_episode(strength="high")], "facts": []})
+check("adversarial: non-numeric strength 400", status == 400)
+status, _ = _chat_with_store({"episodes": [_min_episode() for _ in range(300)], "facts": []})
+check("adversarial: oversized store 400", status == 400)
+status, data = _chat_with_store({"episodes": [{"bogus": 1}], "facts": []})
+check("adversarial: generic malformed message", data["error"] == "malformed store")
+
+status, _ = run_handler("chat", (b"[" * 60000) + (b"]" * 60000), {"ENGRAM_FAKE": "1"})
+check("adversarial: deeply nested JSON 400", status == 400)
+status, _ = run_handler("chat", b"x" * 1_100_000, {"ENGRAM_FAKE": "1"})
+check("adversarial: oversized body 400", status == 400)
+
+class ExplodingEmb:
+    def embed(self, text):
+        raise ValueError("boom")
+_real2 = wa.providers_from_env
+wa.providers_from_env = lambda environ: (FakeLLM([]), ExplodingEmb())
+status, data = wa.run_handler("chat", json.dumps({"store": None, "t": 0, "message": "hi"}).encode(), {})
+wa.providers_from_env = _real2
+check("adversarial: unexpected exception -> 500 internal error",
+      status == 500 and data["error"] == "internal error")
+
 print(f"\n{'RED' if FAILS else 'GREEN'}: {len(FAILS)} failing")
 sys.exit(1 if FAILS else 0)
