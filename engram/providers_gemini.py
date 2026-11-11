@@ -52,16 +52,28 @@ class GeminiLLM:
         self.model = model
         self.timeout = timeout
 
+    # Ways to keep thinking off, newest first. Grounded recall and distillation
+    # don't need chain-of-thought, and thinking tokens eat the output budget
+    # (empty replies on the flash-lite models). The "-latest" alias moves between
+    # model generations, and each accepts a different form: on 2026-11-12 it moved
+    # to gemini-3.5-flash-lite, which 400s on thinkingBudget but takes thinkingLevel.
+    _THINKING_OFF = ({"thinkingLevel": "minimal"}, {"thinkingBudget": 0})
+
     def complete(self, prompt, max_tokens=1000):
-        # thinkingBudget 0 disables chain-of-thought: grounded recall and
-        # distillation don't need it, and it stops "thinking" tokens from
-        # eating the output budget (empty replies on the flash-lite models).
-        data = _call(f"{_BASE}/{self.model}:generateContent",
-                     {"contents": [{"parts": [{"text": prompt}]}],
-                      "generationConfig": {"maxOutputTokens": max_tokens,
-                                           "thinkingConfig": {"thinkingBudget": 0}}},
-                     self.api_key, self.timeout)
-        return _parse_text(data)
+        last = None
+        for thinking in self._THINKING_OFF:
+            try:
+                data = _call(f"{_BASE}/{self.model}:generateContent",
+                             {"contents": [{"parts": [{"text": prompt}]}],
+                              "generationConfig": {"maxOutputTokens": max_tokens,
+                                                   "thinkingConfig": thinking}},
+                             self.api_key, self.timeout)
+                return _parse_text(data)
+            except urllib.error.HTTPError as exc:
+                if exc.code != 400:
+                    raise
+                last = exc  # this model rejects that form; try the next one
+        raise last
 
 
 class GeminiEmbedder:

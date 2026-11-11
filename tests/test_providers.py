@@ -103,5 +103,55 @@ except ProviderBusy:
 pg._post = _real_gpost
 check("gemini: 429 raises ProviderBusy (llm + embedder)", busy_llm and busy_emb)
 
+# 2026-11-12: Google moved gemini-flash-lite-latest to gemini-3.5-flash-lite, which
+# rejects thinkingConfig.thinkingBudget with 400 INVALID_ARGUMENT but accepts
+# thinkingLevel. The LLM must try the current setting first and fall back, so the
+# next alias move can't take the demo down again.
+_sent = []
+def _picky(url, payload, headers, timeout):
+    thinking = payload["generationConfig"].get("thinkingConfig")
+    _sent.append(thinking)
+    if thinking != {"thinkingBudget": 0}:  # an older model: only accepts the budget form
+        raise urllib.error.HTTPError(url, 400, "INVALID_ARGUMENT", {}, None)
+    return {"candidates": [{"content": {"parts": [{"text": "ok"}]}}]}
+pg._post = _picky
+try:
+    fell_back = glm.complete("hi") == "ok"
+except Exception:
+    fell_back = False
+check("gemini: 400 on one thinking form falls back to the next", fell_back and len(_sent) >= 2)
+check("gemini: tries thinkingLevel=minimal first", bool(_sent) and _sent[0] == {"thinkingLevel": "minimal"})
+
+def _new_model(url, payload, headers, timeout):
+    if payload["generationConfig"].get("thinkingConfig") == {"thinkingBudget": 0}:
+        raise urllib.error.HTTPError(url, 400, "INVALID_ARGUMENT", {}, None)
+    return {"candidates": [{"content": {"parts": [{"text": "new"}]}}]}
+pg._post = _new_model
+check("gemini: works on the new model (thinkingLevel accepted)", glm.complete("hi") == "new")
+
+def _always_400(url, payload, headers, timeout):
+    raise urllib.error.HTTPError(url, 400, "INVALID_ARGUMENT", {}, None)
+pg._post = _always_400
+try:
+    glm.complete("hi")
+    raised = False
+except urllib.error.HTTPError as exc:
+    raised = exc.code == 400
+check("gemini: a 400 on every form still raises (no silent empty reply)", raised)
+
+def _forbidden(url, payload, headers, timeout):
+    raise urllib.error.HTTPError(url, 403, "forbidden", {}, None)
+_calls = {"n": 0}
+def _count_forbidden(url, payload, headers, timeout):
+    _calls["n"] += 1
+    return _forbidden(url, payload, headers, timeout)
+pg._post = _count_forbidden
+try:
+    glm.complete("hi")
+except urllib.error.HTTPError:
+    pass
+check("gemini: non-400 errors are not retried", _calls["n"] == 1)
+pg._post = _real_gpost
+
 print(f"\n{'RED' if FAILS else 'GREEN'}: {len(FAILS)} failing")
 sys.exit(1 if FAILS else 0)
