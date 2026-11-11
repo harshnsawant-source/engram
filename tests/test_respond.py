@@ -86,5 +86,26 @@ llm = FakeLLM(["The dog is called Bruno [aaaa1111]."])
 r = respond(s, llm, emb, "what is the dog called", now=0.0)
 check("respond: empty-text episode does not crash prompting", not r.refused)
 
+# 2026-11-12 (external review, reproduced first): a cited sentence used to carry an
+# uncited claim along with it. Every non-empty sentence must now cite a memory.
+from engram.respond import _verify
+
+
+class _M:
+    def __init__(self, i, t):
+        self.id, self.text = i, t
+
+
+_allergy = {"aaaa1111": _M("aaaa1111", "The user is allergic to peanuts")}
+_ok, _failed = _verify("The user is allergic to peanuts [aaaa1111]. Their birthday is in May.", _allergy)
+check("verify: uncited extra sentence fails verification", bool(_failed))
+_ok, _failed = _verify("The user is allergic to peanuts [aaaa1111].", _allergy)
+check("verify: fully cited answer still passes", _ok == ["aaaa1111"] and not _failed)
+_ok, _failed = _verify("The user is allergic to peanuts [aaaa1111]. ", _allergy)
+check("verify: trailing whitespace is not an uncited sentence", not _failed)
+# Known, documented limit: this is a structural check, not entailment.
+_ok, _failed = _verify("The user is not allergic to peanuts [aaaa1111].", _allergy)
+check("verify: negation still passes (documented limit, not a guarantee)", not _failed)
+
 print(f"\n{'RED' if FAILS else 'GREEN'}: {len(FAILS)} failing")
 sys.exit(1 if FAILS else 0)

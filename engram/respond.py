@@ -65,6 +65,11 @@ def _verify(reply_text, allowed):
         return [], ["<none>"]
     failed = []
     for sentence in _SENTENCE_SPLIT.split(reply_text):
+        if sentence.strip() and not _CITE.search(sentence):
+            # An uncited sentence would ride along on its neighbours' citations.
+            # Structural only: a cited sentence can still contradict its memory.
+            failed.append("<uncited>")
+            continue
         for cid in _CITE.findall(sentence):
             mem = allowed.get(cid)
             if mem is None or not (_content_words(sentence) & _content_words(_memory_text(mem))):
