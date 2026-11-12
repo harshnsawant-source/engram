@@ -2,7 +2,7 @@
 
 A cognitive memory engine for LLM agents: episodic-to-semantic
 consolidation, a real forgetting curve, and provenance-grounded recall
-that refuses to confabulate.
+that cites its memories or refuses.
 
 **Live demo: https://engram-blue.vercel.app** — chat with it, then press
 Sleep and watch your conversation consolidate into memory.
@@ -17,7 +17,10 @@ of guessing.
 ## Measured, not vibes
 
 All numbers come from the deterministic offline eval harness
-(`python evals/run_evals.py`), which runs as part of the test battery:
+(`python evals/run_evals.py`), which runs as part of the test battery.
+The harness uses a scripted fake LLM and a hash embedder, so these numbers
+test the engine's logic. They are not a measurement of a live model, and
+the live demo has not been scored this way.
 
 | Eval | Result |
 |---|---|
@@ -41,9 +44,12 @@ All numbers come from the deterministic offline eval harness
   facts 14) and is boosted on retrieval. Below threshold, memories go
   dormant: excluded from recall, never deleted. Inspired by ACT-R's
   activation model; not claimed as a faithful simulation.
-- **Refusal over confabulation.** Answers must cite memory ids; every
-  citation is verified against its memory. No grounded support means a
-  verbatim refusal.
+- **Refusal over confabulation.** Answers must cite memory ids, and every
+  sentence must carry a citation. Each citation is checked against its
+  memory by id and by shared content words. No grounded support means a
+  verbatim refusal. This is a structural check, not proof that a sentence
+  follows from its memory: a negated sentence can still pass, and so can a
+  lead-in line that ends in a colon.
 
 ## Quickstart
 
